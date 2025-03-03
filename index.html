@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <script src="https://unpkg.com/pngquant-wasm/dist/pngquant.min.js"></script>
+  <script src="./libs/bundle.js"></script>
   <title>Game Tile Generator</title>
   <style>
     /* Заборона скролу на сторінці */
@@ -1115,11 +1115,9 @@
           }
           try {
             const arrayBuffer = await blob.arrayBuffer();
-            // Налаштовуємо опції (якість задається у відсотках)
-            const options = { quality: [60, 80] }; // значення можна коригувати
-            // Припускаємо, що pngquant-wasm надає глобальний об'єкт PNGQuant з методом compress,
-            // який повертає Uint8Array з оптимізованими даними.
-            const compressedBuffer = await PNGQuant.compress(arrayBuffer, options);
+            // Використовуємо метод compress із CanvasPngCompression.
+            // Параметри (наприклад, level) налаштовуються відповідно до вашої потреби.
+            const compressedBuffer = await CanvasPngCompression.compress(arrayBuffer, { level: 2 });
             let binary = "";
             const uint8 = new Uint8Array(compressedBuffer);
             for (let i = 0; i < uint8.length; i++) {
@@ -1133,6 +1131,7 @@
         }, "image/png");
       });
     }
+
 
     async function exportImages(gameCode, exportFormat) {
       try {

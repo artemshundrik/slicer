@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <title>WebP Icon Generator</title>
+  <style>
+    /* Заборона скролу на сторінці */
+    html, body {
+      overflow: hidden;
+      user-select: none;
+      margin: 0;
+      padding: 0;
+    }
+    input, textarea {
+      user-select: text;
+    }
+    /* Змінні для світлої теми */
+    :root {
+      --site-background: #ffffff;
+      --preview-bg: #F2F2F2;
+      --preview-text: #B5B5B5;
+      --text: #1c1c1e;
+      --card-bg: rgba(255,255,255,1);
+      --border-color: #ccc;
+      --accent: #007aff;
+      --link-btn-bg: #f8d7da;
+      --link-btn-color: #f44336;
+      --link-btn-unlinked-border: var(--link-btn-bg);
+      --link-btn-active-bg: #fff;
+      --link-btn-active-border: var(--accent);
+      --link-btn-active-color: var(--accent);
+      --secondary-bg: transparent;
+      --secondary-color: var(--accent);
+      --secondary-border: var(--accent);
+      --warning-bg: #fff3cd;
+      --lowres-bg: #ffeb3b; /* Жовтий фон для Low resolution */
+    }
+    /* Змінні для темної теми */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --site-background: #171717;
+        --preview-bg: #303030;
+        --preview-text: #969695;
+        --text: #f2f2f7;
+        --card-bg: #212120;
+        --border-color: #444;
+        --accent: #0a84ff;
+        --link-btn-bg: #4a2627;
+        --link-btn-color: #f44336;
+        --link-btn-unlinked-border: var(--link-btn-bg);
+        --link-btn-active-bg: #2c2c2e;
+        --link-btn-active-border: var(--accent);
+        --link-btn-active-color: var(--accent);
+        --secondary-bg: transparent;
+        --secondary-color: var(--accent);
+        --secondary-border: var(--accent);
+        --warning-bg: #997E00;
+        --lowres-bg: #ffeb3b;
+      }
+    }
+    body {
+      background: var(--site-background);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      transition: background 0.3s, color 0.3s;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 1rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* === НОВІ СТИЛІ ДЛЯ ВКЛАДОК (Game Tiles / Promotions) === */
+    .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    padding: 1rem 0;
+    background: transparent; /* прозорий фон */
+    margin-bottom: 2rem; 
+    }
+
+    .tab {
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: color 0.3s, border-bottom 0.3s;
+    padding: 0.5rem 1rem;
+    border-bottom: 2px solid transparent;
+    }
+    .tab {
+    color: #A3A4A9; /* темний текст для світлої теми */
+    }
+
+    .tab.active {
+    color: #5D5D5D;
+    font-weight: 500;
+    border-bottom: 2px solid #5D5D5D;
+    }
+
+    /* Для темної теми */
+    @media (prefers-color-scheme: dark) {
+    .tab {
+        color: #868686; /* світліший текст для темної теми */
+    }
+    .tab.active {
+        color: #b4b4b4;
+        border-bottom: 2px solid #b4b4b4;
+        font-weight: 500;
+    }
+    }
+
+    .editor {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      gap: 1rem;
+      flex-grow: 1;
+    }
+    .previews-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      width: fit-content;
+    }
+    .preview-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    .preview-container {
+      position: relative;
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 1rem;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+    .preview {
+      position: relative;
+      overflow: hidden;
+      border: none;
+      border-radius: 8px;
+      background: var(--preview-bg);
+      width: 100%;
+      height: 100%;
+      transition: background 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+    .preview.dragover {
+      box-shadow: inset 0 0 0 2px #0063FB;
+      background: #DEF0FF;
+    }
+    @media (prefers-color-scheme: dark) {
+      .preview.dragover {
+        box-shadow: inset 0 0 0 2px #0068FE;
+        background: #1E397A;
+      }
+    }
+    .preview canvas {
+      display: block;
+      pointer-events: none;
+    }
+    .placeholder-icon {
+      position: absolute;
+      top: 35%;
+      left: 50%;
+      transform: translateX(-50%) scale(2);
+      font-size: 24px;
+      color: var(--preview-text);
+      pointer-events: none;
+    }
+    .upload-text {
+      position: absolute;
+      top: 60%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.2rem;
+      font-weight: medium;
+      line-height: 1.4;
+      color: var(--preview-text);
+      text-align: center;
+      pointer-events: none;
+      white-space: pre;
+    }
+    .preview.dragover .upload-text {
+      color: #0063FB !important;
+    }
+    .preview.dragover .placeholder-icon {
+      color: #0063FB !important;
+    }
+    .image-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .preview-container:hover .image-overlay {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    /* Стилі для topInfo – симетричні відступи */
+    #topInfo-15x10, #topInfo-10x10 {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 0.3rem 12px;
+      border-radius: 16px;
+      display: inline-block;
+      margin: 8px;  /* Відступи з усіх боків */
+    }
+    .overlay-container {
+        position: absolute;
+        bottom: 0px;
+        left: 0px;
+        display: flex;
+        flex-direction: column;
+        gap: -16px; /* Відступ між блоками */
+        z-index: 12; /* Забезпечуємо, що контейнер відображається поверх іншого контенту */
+    }
+    /* Стиль для Low resolution – жовтий фон */
+    .overlay-info {
+        /* Загальний стиль для обох блоків */
+        font-size: 0.9rem;
+        padding: 0.3rem 12px;
+        text-align: left;
+        border-radius: 16px;
+    }
+    .overlay-info.transparency {
+      background: rgba(255, 0, 0, 1);
+      color: #fff;
+    }
+    .overlay-info.lowres {
+      background: var(--lowres-bg);
+      color: #000;
+    }
+    /* Базовий стиль для інших overlay-info */
+    .overlay-info {
+      margin: 8px;
+      padding: 0.3rem 12px;
+      background: rgba(0, 0, 0, 0.4);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      font-size: 0.9rem;
+      text-align: left;
+      border-radius: 16px;
+      display: inline-block;
+      align-self: flex-start;
+    }
+    .zoom-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: 1.5rem;
+    }
+    .zoom-container input[type="range"] {
+    flex: 1; /* заставляет слайдер занимать всё доступное пространство */
+    }
+    /* Нове оформлення для лінк-батонів */
+    .link-btn {
+    background: transparent;
+    border: 2px solid #88888839;  /* сірий колір для неактивного стану */
+    border-radius: 9999px;
+    color: #888;
+    font-size: 24px;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.3s ease, color 0.3s ease;
+    }
+
+    .link-btn:hover {
+    background: #888;
+    color: #fff;
+    transform: scale(1.15);
+    }
+
+    .link-btn.active {
+    background: #007aff;        /* синій фон для активного стану */
+    border-color: #007aff;
+    color: #fff;
+    }
+
+
+    /* Для темної теми */
+    @media (prefers-color-scheme: dark) {
+    .link-btn {
+        border-color: #888;
+        color: #888;
+    }
+    .link-btn:hover {
+        background: #888;
+        color: #fff;
+    }
+    .link-btn.active {
+        background: #007aff;
+        border-color: #0a84ff;
+        color: #fff;
+    }
+    }
+
+
+    .action-buttons {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000; /* щоб кнопки були поверх іншого контенту */
+        display: flex;
+        gap: 1rem; /* відстань між кнопками, можна змінити значення за потребою */
+    }
+    button {
+      display: inline-block;
+      padding: 0.8rem 1.5rem;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: filter 0.2s;
+    }
+    button:hover {
+      filter: brightness(0.9);
+    }
+    .primary-btn {
+      padding: 0.8rem 2rem;
+      background: var(--accent);
+      color: #fff;
+    }
+    .secondary-btn {
+      padding: 0.8rem 2rem;
+      background: var(--secondary-bg);
+      color: var(--secondary-color);
+      border: 2px solid var(--secondary-border);
+    }
+    .close-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #000;
+      color: #fff;
+      border: 2px solid #fff;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      margin: 0;
+      display: none;
+      z-index: 10;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+      transition: background 0.2s, transform 0.2s;
+    }
+    .close-btn:hover {
+      background: #333;
+    }
+    @media (prefers-color-scheme: dark) {
+      .close-btn {
+        background: #fff;
+        color: #000;
+        border: 2px solid #000;
+      }
+      .close-btn:hover {
+        background: #ddd;
+        transform: scale(1.05);
+      }
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background: rgba(0,0,0,0.3);
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.3s;
+    }
+    .modal-content {
+      background: var(--card-bg);
+      margin: 10% auto;
+      padding: 1.5rem;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      position: relative;
+    }
+    .modal-content input {
+      width: 80%;
+      padding: 0.5rem;
+      margin: 1rem 0;
+      font-size: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      user-select: text;
+    }
+    /* Стилі для вибору формату */
+    #formatContainer {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+    }
+    #formatContainer label {
+      display: inline-flex;
+      align-items: center;
+      margin: 0;
+      gap: 0.3rem;
+      cursor: pointer;
+    }
+    .modal-content button {
+      margin-top: 0.5rem;
+    }
+    .modal-content .close {
+      position: absolute;
+      top: 8px;
+      right: 16px;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    #toastContainer {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 2000;
+    }
+    .toast {
+        background: linear-gradient(135deg, #212121, #212121); /* Темний градієнт */
+        color: #fff;
+        padding: 0.75rem 1.25rem;
+        margin-top: 1rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        font-size: 1rem;
+        opacity: 0;
+        animation: fadeInToast 0.5s forwards, fadeOutToast 0.5s 2.5s forwards;
+    }
+    @keyframes fadeInToast {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeOutToast {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+    /* Стилі для іконки повнорозмірного перегляду */
+    .fullscreen-icon {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      width: 30px;
+      height: 30px;
+      background: rgba(0, 0, 0, 0.5);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 15;
+      display: none;
+    }
+    .fullscreen-icon span {
+      display: inline-block;
+      width: 100%;
+      text-align: center;
+      line-height: 30px;
+    }
+    /* Модальне вікно для повнорозмірного перегляду */
+    #fullsizeModal .modal-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 90vw;
+      max-height: 90vh;
+      background: transparent;
+      padding: 10px;
+      border-radius: 12px;
+    }
+    #fullsizeModal canvas {
+      border-radius: 8px;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Вкладки замість <h1> -->
+    <div class="tabs">
+      <span class="tab active" id="tabGameTiles">Game Tiles</span>
+      <span class="tab" id="tabPromotions" style="cursor: default; pointer-events: none;">Promotions (Coming soon)</span>
+    </div>
+
+    <!-- Контейнер для Game Tiles (весь існуючий редактор) -->
+    <div id="contentGameTiles">
+      <div class="editor">
+        <div class="previews-row">
+          <!-- 15×10 Preview -->
+          <div class="preview-column">
+            <div class="preview-container" id="preview-15x10" data-fullwidth="852" data-fullheight="540" data-display-width="460" data-display-height="292">
+              <button class="close-btn" id="closeBtn-15x10">✕</button>
+              <div class="preview" style="width:460px; height:292px;">
+                  <div class="placeholder-icon">
+                    <span class="material-icons">add_photo_alternate</span>
+                  </div>
+                  <span class="upload-text">Drag & Drop an image or<br>click here to upload</span>
+                  <canvas class="preview-canvas" width="460" height="292"></canvas>
+                  <!-- Іконка для повнорозмірного перегляду -->
+                  <div class="fullscreen-icon" id="fsIcon15">
+                    <span class="material-icons">fullscreen</span>
+                  </div>
+                  <div class="image-overlay" id="overlay-15x10">
+                    <div class="overlay-info" id="topInfo-15x10" style="display:none;"></div>
+                  </div>
+                  <div class="overlay-container">
+                    <div class="overlay-info transparency" style="display: none;">Transparent</div>
+                    <div class="overlay-info lowres" style="display: none;">Low resolution</div>
+                  </div>
+              </div>
+                
+              <!-- Zoom-слайдер для preview15 -->
+              <div class="zoom-container">
+                  <label for="zoomSlider15">Zoom:</label>
+                  <input type="range" id="zoomSlider15" min="0.5" max="3" step="0.1" value="1" disabled>
+                  <span id="zoomValue15">100%</span>
+              </div>              
+              <!-- File input прихований стилями -->
+              <input type="file" accept="image/*" id="fileInput15" style="opacity:0; position:absolute; left:-9999px;">
+            </div>
+          </div>
+          <!-- Link Button -->
+          <button id="linkBtn" class="link-btn" title="Use the same image as for 15x10">
+            <span id="linkIcon" class="material-icons">link_off</span>
+          </button>
+          <!-- 10×10 Preview -->
+          <div class="preview-column">
+            <div class="preview-container" id="preview-10x10" data-fullwidth="540" data-fullheight="540" data-display-width="292" data-display-height="292">
+              <button class="close-btn" id="closeBtn-10x10">✕</button>
+              <div class="preview" style="width:292px; height:292px;">
+                  <div class="placeholder-icon">
+                    <span class="material-icons">add_photo_alternate</span>
+                  </div>
+                  <span class="upload-text">Drag & Drop an image or<br>click here to upload</span>
+                  <canvas class="preview-canvas" width="292" height="292"></canvas>
+                  <!-- Іконка для повнорозмірного перегляду -->
+                  <div class="fullscreen-icon" id="fsIcon10">
+                    <span class="material-icons">fullscreen</span>
+                  </div>
+                  <div class="image-overlay" id="overlay-10x10">
+                    <div class="overlay-info" id="topInfo-10x10" style="display:none;"></div>
+                  </div>
+                  <div class="overlay-container">
+                    <div class="overlay-info transparency" style="display: none;">Transparent</div>
+                    <div class="overlay-info lowres" style="display: none;">Low resolution</div>
+                  </div>
+              </div>
+              <!-- Zoom-слайдер для preview10 -->
+              <div class="zoom-container">
+                  <label for="zoomSlider10">Zoom:</label>
+                  <input type="range" id="zoomSlider10" min="0.5" max="3" step="0.1" value="1" disabled>
+                  <span id="zoomValue10">100%</span>
+              </div>
+              <input type="file" accept="image/*" id="fileInput10" style="opacity:0; position:absolute; left:-9999px;">
+            </div>
+          </div>
+        </div>
+        <div class="action-buttons">
+          <button id="clearBtn" class="secondary-btn">Clear</button>
+          <button id="exportBtn" class="primary-btn">Export</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Контейнер для Promotions (поки що порожній) -->
+    <div id="contentPromotions" style="display: none;">
+      <!-- Місце під контент для Promotions -->
+    </div>
+  </div>
+
+  <div id="toastContainer"></div>
+  <!-- Модальне вікно для повнорозмірного перегляду -->
+  <div id="fullsizeModal" class="modal">
+    <div class="modal-content" style="position: relative; display: flex;">
+      <span class="close" id="closeFullsize">&times;</span>
+      <canvas id="fullsizeCanvas"></canvas>
+    </div>
+  </div>
+  <!-- Модальне вікно для введення game_code -->
+  <div id="gameCodeModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Enter game_code</h2>
+      <input type="text" id="gameCodeInput" placeholder="game_code">
+      <div id="formatContainer">
+        <label><input type="radio" name="exportFormat" value="webp" checked> WebP</label>
+        <label><input type="radio" name="exportFormat" value="png"> PNG</label>
+      </div>
+      <button id="confirmGameCodeBtn" class="primary-btn">Confirm</button>
+    </div>
+  </div>
+  <script>
+    /* === Вкладки: перемикання між Game Tiles і Promotions === */
+    const tabGameTiles = document.getElementById('tabGameTiles');
+    const tabPromotions = document.getElementById('tabPromotions');
+    const contentGameTiles = document.getElementById('contentGameTiles');
+    const contentPromotions = document.getElementById('contentPromotions');
+
+    tabGameTiles.addEventListener('click', () => {
+      tabGameTiles.classList.add('active');
+      tabPromotions.classList.remove('active');
+      contentGameTiles.style.display = 'block';
+      contentPromotions.style.display = 'none';
+    });
+
+    tabPromotions.addEventListener('click', () => {
+      tabPromotions.classList.add('active');
+      tabGameTiles.classList.remove('active');
+      contentGameTiles.style.display = 'none';
+      contentPromotions.style.display = 'block';
+    });
+
+    /* === TOAST FUNCTION === */
+    function showToast(message) {
+      console.log("Toast:", message);
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = message;
+      document.getElementById('toastContainer').appendChild(toast);
+      setTimeout(() => { toast.remove(); }, 3000);
+    }
+    /* === CHECK TRANSPARENCY FUNCTION === */
+    function hasTransparency(canvas) {
+      const ctx = canvas.getContext('2d');
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] === 0) return true;
+      }
+      return false;
+    }
+    /* === PREVIEW STATE OBJECTS === */
+    const preview15 = {
+      container: document.getElementById('preview-15x10'),
+      file: null,
+      image: null,
+      mode: 'crop',
+      offsetX: 0,
+      offsetY: 0,
+      zoomFactor: 1,
+      isFilePickerOpen: false,
+      canvas: document.querySelector('#preview-15x10 .preview-canvas'),
+      displayWidth: 460,
+      displayHeight: 292,
+      finalWidth: 852,
+      finalHeight: 540
+    };
+    const preview10 = {
+      container: document.getElementById('preview-10x10'),
+      file: null,
+      image: null,
+      mode: 'crop',
+      offsetX: 0,
+      offsetY: 0,
+      zoomFactor: 1,
+      isFilePickerOpen: false,
+      canvas: document.querySelector('#preview-10x10 .preview-canvas'),
+      displayWidth: 292,
+      displayHeight: 292,
+      finalWidth: 540,
+      finalHeight: 540
+    };
+    /* === DRAWING LOGIC === */
+    function getScaledDims(preview) {
+      if (!preview.image) return { w: 0, h: 0 };
+      // Завжди crop: scale розраховується як Math.max
+      const scale = Math.max(preview.displayWidth / preview.image.naturalWidth, preview.displayHeight / preview.image.naturalHeight);
+      return {
+        w: preview.image.naturalWidth * scale,
+        h: preview.image.naturalHeight * scale
+      };
+    }
+    function drawPreview(preview) {
+      const ctx = preview.canvas.getContext('2d');
+      ctx.clearRect(0, 0, preview.displayWidth, preview.displayHeight);
+      const previewDiv = preview.container.querySelector('.preview');
+      // Якщо зображення ще не завантажене – ховаємо topInfo та transparency warning
+      if (!preview.image) {
+        previewDiv.style.cursor = "pointer";
+        const topInfo = preview.container.querySelector('#topInfo-' + preview.container.id.split('-')[1]);
+        if (topInfo) topInfo.style.display = 'none';
+        const transWarning = preview.container.querySelector('.overlay-info.transparency');
+        if (transWarning) transWarning.style.display = 'none';
+        return;
+      }
+      let dims = getScaledDims(preview);
+      dims.w *= preview.zoomFactor;
+      dims.h *= preview.zoomFactor;
+      const centerX = (preview.displayWidth - dims.w) / 2;
+      const centerY = (preview.displayHeight - dims.h) / 2;
+      const dx = centerX + preview.offsetX;
+      const dy = centerY + preview.offsetY;
+      ctx.drawImage(preview.image, dx, dy, dims.w, dims.h);
+      
+      // Блокуємо click-to-open, якщо зображення завантажене
+      previewDiv.style.cursor = "default";
+      
+      // Оновлюємо topInfo
+      const topInfo = preview.container.querySelector('#topInfo-' + preview.container.id.split('-')[1]);
+      if (topInfo) {
+        topInfo.textContent = `Original: ${preview.image.naturalWidth}×${preview.image.naturalHeight}`;
+        topInfo.style.display = 'inline-block';
+      }
+      
+      // Перевірка Low resolution (з урахуванням зуму)
+      const lowresWarning = preview.container.querySelector('.overlay-info.lowres');
+      if (preview.container.id === 'preview-15x10') {
+        lowresWarning.style.display =
+          (preview.image.naturalWidth / preview.zoomFactor < 852 ||
+           preview.image.naturalHeight / preview.zoomFactor < 540)
+            ? 'block'
+            : 'none';
+      } else if (preview.container.id === 'preview-10x10') {
+        lowresWarning.style.display =
+          (preview.image.naturalWidth / preview.zoomFactor < 540 ||
+           preview.image.naturalHeight / preview.zoomFactor < 540)
+            ? 'block'
+            : 'none';
+      }
+      
+      // Перевірка Transparency
+      const transWarning = preview.container.querySelector('.overlay-info.transparency');
+      if (hasTransparency(preview.canvas)) {
+        transWarning.style.display = 'inline-block';
+      } else {
+        transWarning.style.display = 'none';
+      }
+      
+      const fsIcon = preview.container.querySelector('.fullscreen-icon');
+      if (fsIcon) fsIcon.style.display = "block";
+    }
+    function drawForExport(ctx, preview, exportWidth, exportHeight, baseDisplayWidth) {
+      if (!preview.image) return;
+      const scale = Math.max(exportWidth / preview.image.naturalWidth, exportHeight / preview.image.naturalHeight);
+      let scaledWidth = preview.image.naturalWidth * scale;
+      let scaledHeight = preview.image.naturalHeight * scale;
+      scaledWidth *= preview.zoomFactor;
+      scaledHeight *= preview.zoomFactor;
+      const centerX = (exportWidth - scaledWidth) / 2;
+      const centerY = (exportHeight - scaledHeight) / 2;
+      const factor = exportWidth / (baseDisplayWidth || preview.displayWidth);
+      const dx = centerX + preview.offsetX * factor;
+      const dy = centerY + preview.offsetY * factor;
+      ctx.clearRect(0, 0, exportWidth, exportHeight);
+      ctx.drawImage(preview.image, dx, dy, scaledWidth, scaledHeight);
+    }
+    function clampOffsets(preview) {
+      if (!preview.image) return;
+      let dims = getScaledDims(preview);
+      dims.w *= preview.zoomFactor;
+      dims.h *= preview.zoomFactor;
+      const centerX = (preview.displayWidth - dims.w) / 2;
+      const centerY = (preview.displayHeight - dims.h) / 2;
+      let dx = centerX + preview.offsetX;
+      let dy = centerY + preview.offsetY;
+      if (dims.w >= preview.displayWidth) {
+        const minX = preview.displayWidth - dims.w;
+        dx = Math.min(dx, 0);
+        dx = Math.max(dx, minX);
+      } else {
+        dx = Math.min(dx, 0);
+        dx = Math.max(dx, preview.displayWidth - dims.w);
+      }
+      if (dims.h >= preview.displayHeight) {
+        const minY = preview.displayHeight - dims.h;
+        dy = Math.min(dy, 0);
+        dy = Math.max(dy, minY);
+      } else {
+        dy = Math.min(dy, 0);
+        dy = Math.max(dy, preview.displayHeight - dims.h);
+      }
+      preview.offsetX = dx - centerX;
+      preview.offsetY = dy - centerY;
+    }
+    /* === DRAG & DROP + CLICK TO UPLOAD === */
+    function enableClickToUpload(preview, fileInput) {
+      const previewDiv = preview.container.querySelector('.preview');
+      previewDiv.addEventListener('click', () => {
+        console.log("Preview clicked.");
+        if (preview.image) return;
+        fileInput.value = "";
+        if (!preview.isFilePickerOpen) {
+          preview.isFilePickerOpen = true;
+          fileInput.click();
+        }
+      });
+      previewDiv.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        previewDiv.classList.add('dragover');
+      });
+      previewDiv.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        previewDiv.classList.add('dragover');
+      });
+      previewDiv.addEventListener('dragleave', (e) => {
+        previewDiv.classList.remove('dragover');
+      });
+      previewDiv.addEventListener('drop', (e) => {
+        e.preventDefault();
+        previewDiv.classList.remove('dragover');
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          const file = e.dataTransfer.files[0];
+          console.log("File dropped:", file);
+          handleFileSelect(preview, file);
+        }
+      });
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        console.log("File selected via file manager:", file);
+        if (file) {
+          handleFileSelect(preview, file);
+        }
+      });
+    }
+    function handleFileSelect(preview, file) {
+      console.log("handleFileSelect called with file:", file);
+      preview.file = file;
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        console.log("Image loaded. Natural size:", img.naturalWidth, "x", img.naturalHeight);
+        preview.image = img;
+        preview.offsetX = 0;
+        preview.offsetY = 0;
+        const placeholderIcon = preview.container.querySelector('.placeholder-icon');
+        if (placeholderIcon) placeholderIcon.style.display = 'none';
+        // Активуємо зум-слайдер, коли картинка завантажена
+        const zoomSlider = preview.container.querySelector('.zoom-container input[type="range"]');
+        if (zoomSlider) zoomSlider.disabled = false;
+        
+        // Оновлюємо інформацію "Original" та показуємо кнопку закриття
+        if (preview.container.id === 'preview-15x10') {
+            const topInfo = document.getElementById('topInfo-15x10');
+            topInfo.textContent = `Original: ${img.naturalWidth}×${img.naturalHeight}`;
+            topInfo.style.display = 'inline-block';
+            document.getElementById('closeBtn-15x10').style.display = 'block';
+            if (img.naturalWidth < preview.finalWidth || img.naturalHeight < preview.finalHeight) {
+              showToast(`⚠️ Source image is smaller than ${preview.finalWidth}×${preview.finalHeight}.`);
+            }
+        }
+        if (preview.container.id === 'preview-10x10') {
+            const topInfo = document.getElementById('topInfo-10x10');
+            topInfo.textContent = `Original: ${img.naturalWidth}×${img.naturalHeight}`;
+            topInfo.style.display = 'inline-block';
+            document.getElementById('closeBtn-10x10').style.display = 'block';
+            if (img.naturalWidth < preview.finalWidth || img.naturalHeight < preview.finalHeight) {
+              showToast(`⚠️ Source image is smaller than ${preview.finalWidth}×${preview.finalHeight}.`);
+            }
+        }
+        const uploadText = preview.container.querySelector('.upload-text');
+        if (uploadText) uploadText.style.display = 'none';
+        drawPreview(preview);
+        preview.isFilePickerOpen = false;
+      };
+
+      img.onerror = (e) => {
+        console.error("Error loading image", e);
+        showToast("❌ Error loading image.");
+        preview.isFilePickerOpen = false;
+      };
+      img.src = url;
+    }
+    function setupPreview(preview, fileInput) {
+      enableClickToUpload(preview, fileInput);
+      fileInput.addEventListener('click', () => {
+        fileInput.value = "";
+        preview.isFilePickerOpen = false;
+      });
+      const previewDiv = preview.container.querySelector('.preview');
+      let isDragging = false, startX, startY, initOffsetX, initOffsetY;
+      previewDiv.addEventListener('mousedown', (e) => {
+        isDragging = false;
+        startX = e.clientX;
+        startY = e.clientY;
+        initOffsetX = preview.offsetX;
+        initOffsetY = preview.offsetY;
+        let dims = getScaledDims(preview);
+        dims.w *= preview.zoomFactor;
+        dims.h *= preview.zoomFactor;
+        if (dims.w <= preview.displayWidth && dims.h <= preview.displayHeight) return;
+        previewDiv.style.cursor = "grabbing";
+        const onMouseMove = (ev) => {
+          const dx = ev.clientX - startX;
+          const dy = ev.clientY - startY;
+          if (!isDragging && Math.hypot(dx, dy) > 3) isDragging = true;
+          if (isDragging) {
+            preview.offsetX = initOffsetX + dx;
+            preview.offsetY = initOffsetY + dy;
+            clampOffsets(preview);
+            drawPreview(preview);
+          }
+        };
+        const onMouseUp = () => {
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+          previewDiv.style.cursor = (dims.w > preview.displayWidth || dims.h > preview.displayHeight) ? "grab" : "default";
+        };
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      });
+      // Обробка іконки fullscreen
+      const fsIcon = preview.container.querySelector('.fullscreen-icon');
+      if (fsIcon && !fsIcon.dataset.listenerAttached) {
+        fsIcon.addEventListener('click', () => {
+          if (!preview.image) return;
+          const fullCanvas = document.getElementById('fullsizeCanvas');
+          fullCanvas.width = preview.finalWidth;
+          fullCanvas.height = preview.finalHeight;
+          const fsState = {
+            image: preview.image,
+            mode: preview.mode,
+            offsetX: preview.offsetX,
+            offsetY: preview.offsetY,
+            zoomFactor: preview.zoomFactor,
+            displayWidth: preview.displayWidth,
+            displayHeight: preview.displayHeight,
+            finalWidth: fullCanvas.width,
+            finalHeight: fullCanvas.height
+          };
+          let scale = Math.max(fullCanvas.width / fsState.image.naturalWidth, fullCanvas.height / fsState.image.naturalHeight);
+          const newWidth = fsState.image.naturalWidth * scale * fsState.zoomFactor;
+          const newHeight = fsState.image.naturalHeight * scale * fsState.zoomFactor;
+          const offsetFactorX = fullCanvas.width / fsState.displayWidth;
+          const offsetFactorY = fullCanvas.height / fsState.displayHeight;
+          const centerX = (fullCanvas.width - newWidth) / 2 + fsState.offsetX * offsetFactorX;
+          const centerY = (fullCanvas.height - newHeight) / 2 + fsState.offsetY * offsetFactorY;
+          const ctx = fullCanvas.getContext('2d');
+          ctx.clearRect(0, 0, fullCanvas.width, fullCanvas.height);
+          ctx.drawImage(fsState.image, centerX, centerY, newWidth, newHeight);
+          document.getElementById('fullsizeModal').style.display = 'block';
+        });
+        fsIcon.dataset.listenerAttached = "true";
+      }
+    }
+    /* === INIT PREVIEWS === */
+    setupPreview(preview15, document.getElementById('fileInput15'));
+    setupPreview(preview10, document.getElementById('fileInput10'));
+
+    document.getElementById('zoomSlider15').addEventListener('input', (e) => {
+      preview15.zoomFactor = parseFloat(e.target.value);
+      drawPreview(preview15);
+      // Оновлюємо відображення зуму у відсотках
+      document.getElementById('zoomValue15').textContent = Math.round(preview15.zoomFactor * 100) + '%';
+    });
+    document.getElementById('zoomSlider10').addEventListener('input', (e) => {
+      preview10.zoomFactor = parseFloat(e.target.value);
+      drawPreview(preview10);
+      // Оновлюємо відображення зуму у відсотках
+      document.getElementById('zoomValue10').textContent = Math.round(preview10.zoomFactor * 100) + '%';
+    });
+
+    const linkBtn = document.getElementById('linkBtn');
+    const linkIcon = document.getElementById('linkIcon');
+    linkBtn.addEventListener('click', () => {
+    if (!preview15.file) {
+        showToast("⚠️ Please upload an image in the 15x10 preview first");
+        return;
+    }
+    if (!linkBtn.classList.contains("active")) {
+        handleFileSelect(preview10, preview15.file);
+        linkBtn.classList.add("active");
+        linkIcon.textContent = "link";  // активна іконка
+        showToast("✅ Linked!");
+    } else {
+        linkBtn.classList.remove("active");
+        linkIcon.textContent = "link_off";  // неактивна іконка
+
+        // Викликаємо повну очистку прев'ю 10×10,
+        // що прибирає інформаційні бейджі та кнопку закриття
+        clearPreview10();
+
+        showToast("ℹ️ Unlinked!");
+    }
+    });
+
+
+    function clearPreview() {
+      preview15.image = null;
+      preview15.file = null;
+      preview15.zoomFactor = 1;
+      const zoomSlider = preview15.container.querySelector('.zoom-container input[type="range"]');
+      if (zoomSlider) {
+          zoomSlider.value = 1;
+          zoomSlider.disabled = true;
+      }
+      const zoomValue = preview15.container.querySelector('.zoom-container span');
+      if (zoomValue) {
+          zoomValue.textContent = "100%";
+      }
+      const uploadText15 = preview15.container.querySelector('.upload-text');
+      if (uploadText15) uploadText15.style.display = 'block';
+      preview15.canvas.getContext('2d').clearRect(0, 0, preview15.canvas.width, preview15.canvas.height);
+      const topInfo = document.getElementById('topInfo-15x10');
+      if (topInfo) { topInfo.textContent = ""; topInfo.style.display = 'none'; }
+      document.getElementById('closeBtn-15x10').style.display = 'none';
+      const placeholderIcon = preview15.container.querySelector('.placeholder-icon');
+      if (placeholderIcon) placeholderIcon.style.display = 'block';
+      const lowresWarning = preview15.container.querySelector('.overlay-info.lowres');
+      if (lowresWarning) lowresWarning.style.display = 'none';
+      const transWarning = preview15.container.querySelector('.overlay-info.transparency');
+      if (transWarning) transWarning.style.display = 'none';
+      const fsIcon = preview15.container.querySelector('.fullscreen-icon');
+      if (fsIcon) fsIcon.style.display = 'none';
+      document.getElementById('fileInput15').value = "";
+    }
+    function clearPreview10() {
+      preview10.image = null;
+      preview10.file = null;
+      preview10.zoomFactor = 1;
+      const zoomSlider = preview10.container.querySelector('.zoom-container input[type="range"]');
+      if (zoomSlider) {
+          zoomSlider.value = 1;
+          zoomSlider.disabled = true;
+      }
+      const zoomValue = preview10.container.querySelector('.zoom-container span');
+      if (zoomValue) {
+          zoomValue.textContent = "100%";
+      }
+      const uploadText10 = preview10.container.querySelector('.upload-text');
+      if (uploadText10) uploadText10.style.display = 'block';
+      preview10.canvas.getContext('2d').clearRect(0, 0, preview10.canvas.width, preview10.canvas.height);
+      const topInfo = document.getElementById('topInfo-10x10');
+      if (topInfo) { topInfo.textContent = ""; topInfo.style.display = 'none'; }
+      document.getElementById('closeBtn-10x10').style.display = 'none';
+      const placeholderIcon = preview10.container.querySelector('.placeholder-icon');
+      if (placeholderIcon) placeholderIcon.style.display = 'block';
+      const lowresWarning = preview10.container.querySelector('.overlay-info.lowres');
+      if (lowresWarning) lowresWarning.style.display = 'none';
+      const transWarning = preview10.container.querySelector('.overlay-info.transparency');
+      if (transWarning) transWarning.style.display = 'none';
+      const fsIcon = preview10.container.querySelector('.fullscreen-icon');
+      if (fsIcon) fsIcon.style.display = 'none';
+      document.getElementById('fileInput10').value = "";
+    }
+    function clearPreviews() {
+      clearPreview();
+      clearPreview10();
+      linkBtn.classList.remove("active");
+      linkIcon.textContent = "link_off";
+      showToast("🔄 Previews cleared!");
+    }
+    document.getElementById('clearBtn').addEventListener('click', clearPreviews);
+    document.getElementById('closeBtn-15x10').addEventListener('click', (e) => {
+      e.stopPropagation();
+      clearPreview();
+      linkBtn.classList.remove("active");
+      linkIcon.textContent = "link_off";
+      showToast("Preview 15x10 cleared!");
+    });
+    document.getElementById('closeBtn-10x10').addEventListener('click', (e) => {
+      e.stopPropagation();
+      clearPreview10();
+      linkBtn.classList.remove("active");
+      linkIcon.textContent = "link_off";
+      showToast("Preview 10x10 cleared!");
+    });
+
+    async function writeFile(dirHandle, fileName, dataURL) {
+      const res = await fetch(dataURL);
+      const blob = await res.blob();
+      const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+    }
+    async function exportImages(gameCode, exportFormat) {
+      try {
+        const dirHandle = await window.showDirectoryPicker();
+        const gameDir = await dirHandle.getDirectoryHandle(gameCode, { create: true });
+        const iconsDir = await gameDir.getDirectoryHandle('icons', { create: true });
+        const iconsWithNamesDir = await iconsDir.getDirectoryHandle('icons_with_game_names', { create: true });
+        let mimeType, extension;
+        if (exportFormat === 'png') {
+          mimeType = "image/png";
+          extension = "png";
+        } else {
+          mimeType = "image/webp";
+          extension = "webp";
+        }
+        const c15 = document.createElement('canvas');
+        c15.width = 852;
+        c15.height = 540;
+        drawForExport(c15.getContext('2d'), preview15, 852, 540, preview15.displayWidth);
+        const dataURL15 = exportFormat === 'png' ? c15.toDataURL(mimeType) : c15.toDataURL(mimeType, 0.8);
+        const c10 = document.createElement('canvas');
+        c10.width = 540;
+        c10.height = 540;
+        drawForExport(c10.getContext('2d'), preview10, 540, 540, preview10.displayWidth);
+        const dataURL10 = exportFormat === 'png' ? c10.toDataURL(mimeType) : c10.toDataURL(mimeType, 0.8);
+        const c3x = document.createElement('canvas');
+        c3x.width = 120;
+        c3x.height = 120;
+        drawForExport(c3x.getContext('2d'), preview10, 120, 120, preview10.displayWidth);
+        const dataURL3x = exportFormat === 'png' ? c3x.toDataURL(mimeType) : c3x.toDataURL(mimeType, 0.8);
+        const c2x = document.createElement('canvas');
+        c2x.width = 80;
+        c2x.height = 80;
+        drawForExport(c2x.getContext('2d'), preview10, 80, 80, preview10.displayWidth);
+        const dataURL2x = exportFormat === 'png' ? c2x.toDataURL(mimeType) : c2x.toDataURL(mimeType, 0.8);
+        await writeFile(iconsWithNamesDir, `${gameCode}_icon_15x10.${extension}`, dataURL15);
+        await writeFile(iconsWithNamesDir, `${gameCode}_icon_10x10.${extension}`, dataURL10);
+        await writeFile(iconsWithNamesDir, `${gameCode}_icon_sl@3x.${extension}`, dataURL3x);
+        await writeFile(iconsWithNamesDir, `${gameCode}_icon_sl@2x.${extension}`, dataURL2x);
+        showToast("✅ Export completed!");
+      } catch (err) {
+        console.error(err);
+        showToast("❌ Error during export: " + err);
+      }
+    }
+    const exportBtn = document.getElementById('exportBtn');
+    exportBtn.addEventListener('click', () => {
+      if (!preview15.image || !preview10.image) {
+        showToast("⚠️ One of the previews is empty!");
+        return;
+      }
+      if (checkTransparencyBeforeExport()) {
+        showToast("🚫 Cannot save due to transparency!");
+        return;
+      }
+      const gameCodeModal = document.getElementById('gameCodeModal');
+      gameCodeModal.style.display = 'block';
+      document.getElementById('gameCodeInput').value = "";
+    });
+    function checkTransparencyBeforeExport() {
+      const c15 = document.createElement('canvas');
+      c15.width = 852;
+      c15.height = 540;
+      drawForExport(c15.getContext('2d'), preview15, 852, 540, preview15.displayWidth);
+      const c10 = document.createElement('canvas');
+      c10.width = 540;
+      c10.height = 540;
+      drawForExport(c10.getContext('2d'), preview10, 540, 540, preview10.displayWidth);
+      return hasTransparency(c15) || hasTransparency(c10);
+    }
+    const gameCodeModal = document.getElementById('gameCodeModal');
+    const closeModal = gameCodeModal.querySelector('.close');
+    closeModal.addEventListener('click', () => { gameCodeModal.style.display = 'none'; });
+    window.addEventListener('click', (e) => { if (e.target === gameCodeModal) { gameCodeModal.style.display = 'none'; } });
+    const confirmGameCodeBtn = document.getElementById('confirmGameCodeBtn');
+    confirmGameCodeBtn.addEventListener('click', () => {
+      const gameCode = document.getElementById('gameCodeInput').value.trim();
+      if (gameCode === "") { showToast("⚠️ Please enter an valid game_code"); return; }
+      const exportFormat = document.querySelector('input[name="exportFormat"]:checked').value;
+      gameCodeModal.style.display = 'none';
+      exportImages(gameCode, exportFormat);
+    });
+    const fullsizeModal = document.getElementById('fullsizeModal');
+    const closeFullsize = document.getElementById('closeFullsize');
+    closeFullsize.addEventListener('click', () => { fullsizeModal.style.display = 'none'; });
+    window.addEventListener('click', (e) => { if (e.target === fullsizeModal) { fullsizeModal.style.display = 'none'; } });
+  </script>
+</body>
+</html>
